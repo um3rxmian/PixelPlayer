@@ -79,6 +79,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import com.theveloper.pixelplay.presentation.viewmodel.PlayerSheetState
 
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -909,6 +912,29 @@ class MainActivity : ComponentActivity() {
                             onSearchBarActiveChange = { isSearchBarActive = it },
                             onOpenSidebar = { scope.launch { drawerState.open() } }
                         )
+
+                        val isExpandedOrExpanding by remember {
+                            derivedStateOf {
+                                playerViewModel.playerContentExpansionFraction.value > 0.01f
+                            }
+                        }
+                        AnimatedVisibility(
+                            visible = isExpandedOrExpanding,
+                            enter = fadeIn(animationSpec = tween(durationMillis = 350)),
+                            exit = fadeOut(animationSpec = tween(durationMillis = 350)),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.6f))
+                                    .pointerInput(Unit) {
+                                        detectTapGestures {
+                                            playerViewModel.collapsePlayerSheet()
+                                        }
+                                    }
+                            )
+                        }
 
                         UnifiedPlayerSheetV2(
                             playerViewModel = playerViewModel,
