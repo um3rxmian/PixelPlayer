@@ -60,6 +60,7 @@ class SyncManager @Inject constructor(
     private val workManager = WorkManager.getInstance(context)
     private val sharingScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var mediaStoreAutoSyncJob: Job? = null
+    private val autoSyncLock = Any()
 
     // EXPONE UN FLOW<BOOLEAN> SIMPLE
     val isSyncing: Flow<Boolean> =
@@ -77,7 +78,7 @@ class SyncManager @Inject constructor(
             )
 
     init {
-        observeExternalMediaStoreChanges()
+        observeStorageChanges()
     }
 
     /**
@@ -195,10 +196,7 @@ class SyncManager @Inject constructor(
     fun incrementalSync() {
         Log.i(TAG, "Incremental sync requested - Scheduling incremental worker")
         enqueueSyncWork(
-            request = SyncWorker.incrementalSyncWork(
-                forceFilesystemScan = true,
-                runMaintenance = false
-            ),
+            request = SyncWorker.incrementalSyncWork(runMaintenance = false),
             policy = ExistingWorkPolicy.REPLACE
         )
     }
@@ -235,32 +233,36 @@ class SyncManager @Inject constructor(
     fun forceRefresh() {
         Log.i(TAG, "Force refresh requested - Scheduling incremental worker")
         enqueueSyncWork(
-            request = SyncWorker.incrementalSyncWork(
-                forceFilesystemScan = true,
-                runMaintenance = false
-            ),
+            request = SyncWorker.incrementalSyncWork(runMaintenance = false),
             policy = ExistingWorkPolicy.REPLACE
         )
     }
 
-    private fun observeExternalMediaStoreChanges() {
+    private fun observeStorageChanges() {
         sharingScope.launch {
             mediaStoreObserver.externalMediaStoreChanges.collect {
-                mediaStoreAutoSyncJob?.cancel()
-                mediaStoreAutoSyncJob = launch {
-                    delay(MEDIASTORE_CHANGE_DEBOUNCE_MS)
-                    Log.i(TAG, "MediaStore change detected - scheduling local incremental sync")
-                    enqueueSyncWork(
-                        request = SyncWorker.incrementalSyncWork(
-                            forceFilesystemScan = false,
-                            runMaintenance = false
-                        ),
-                        policy = ExistingWorkPolicy.KEEP,
-                        notifyObserver = false
-                    )
-                }
+                scheduleLocalAutoSync()
             }
         }
+    }
+
+    private fun scheduleLocalAutoSync() {
+        synchronized(autoSyncLock) {
+            mediaStoreAutoSyncJob?.cancel()
+            mediaStoreAutoSyncJob = sharingScope.launch {
+                runLocalAutoSyncAfterDebounce()
+            }
+        }
+    }
+
+    private suspend fun runLocalAutoSyncAfterDebounce() {
+        delay(MEDIASTORE_CHANGE_DEBOUNCE_MS)
+        Log.i(TAG, "Storage change detected - scheduling local incremental sync")
+        enqueueSyncWork(
+            request = SyncWorker.incrementalSyncWork(runMaintenance = false),
+            policy = ExistingWorkPolicy.KEEP,
+            notifyObserver = false
+        )
     }
 
     private fun enqueueSyncWork(
