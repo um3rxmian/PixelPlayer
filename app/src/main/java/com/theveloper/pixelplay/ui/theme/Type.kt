@@ -1,12 +1,18 @@
 package com.theveloper.pixelplay.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+
+val GoogleSansRounded = FontFamily.Default
+
+val MontserratFamily = FontFamily.Default
 
 val ExpTitleTypography = Typography(
     displayLarge = TextStyle(
@@ -16,6 +22,7 @@ val ExpTitleTypography = Typography(
         textGeometricTransform = TextGeometricTransform(scaleX = 1.5f),
         letterSpacing = (-0.02).em,
         lineHeight = 0.95.em,
+        platformStyle = PlatformTextStyle(includeFontPadding = false)
     ),
     displayMedium = TextStyle(
         fontFamily = FontFamily.Default,
@@ -23,6 +30,7 @@ val ExpTitleTypography = Typography(
         fontSize = 50.sp,
         letterSpacing = (-0.02).em,
         lineHeight = 0.95.em,
+        platformStyle = PlatformTextStyle(includeFontPadding = false)
     ),
     titleMedium = TextStyle(
         fontFamily = FontFamily.Default,
@@ -31,6 +39,7 @@ val ExpTitleTypography = Typography(
         textGeometricTransform = TextGeometricTransform(scaleX = 1.3f),
         letterSpacing = (-0.02).em,
         lineHeight = 0.95.em,
+        platformStyle = PlatformTextStyle(includeFontPadding = false)
     )
 )
 
